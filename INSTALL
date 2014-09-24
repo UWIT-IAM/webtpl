@@ -1,0 +1,16 @@
+
+
+configure
+
+ $ ./boot
+
+ $ ./configure
+
+make and install
+
+ $ make
+
+ $ make install
+
+
+
