@@ -1,0 +1,128 @@
+Expected missing file: (2), No such file or directory
+Expected invalid file: (0), Block hijk ended with abc_d
+
+Content-type: text/html; charset=ISO-8859-1
+Cache-Control: no-store, no-cache, must-revalidate
+Expires: Sat, 1 Jan 2000 01:01:01 GMT
+Set-Cookie: ck1=ck1's value; path=/fox/;
+
+<!-- assignments
+  tmplate assigned
+ -->
+<html>
+<head>
+<title>Web Template test</title>
+</head>
+<body>
+
+Simple replacement
+..replacement..
+<br>
+++replacement++
+
+Dynamic block used:
+Block1 (111) - 999 should appear
+Block1 (222) - 999 should appear
+
+Dynamic block unused:
+
+Nested dynamic blocks:
+
+  Block1 (222) - 999 end (should appear twice)
+
+  Block1 (-efg-) - (-efg-) end (should appear only once)
+
+
+
+  Block1 (222) - 999 end (should appear twice)
+
+
+
+--replacement--
+<p>
+
+!- args ------------------------------------------------!
+
+arg1 = ARG1
+arg2 = aaaa
+arg2 = bbbb
+arg2 = cccc
+arg3 = ARG3
+
+!-------------------------------------------------------!
+
+#start of SUB
+aacc
+----
+cc
+aa
+.cc.
+
+#end of SUB
+
+#start of SUB3
+
+This is sub3.tpl
+
+
+#end of SUB3
+
+Value of AA: aa
+Value of CC: cc
+</html>
+#end of test1.tpl
+Content-type: text/html; charset=ISO-8859-1
+Set-Cookie: ck2=ck2's value; path=/fox/;
+
+<!-- assignments
+  tmplate assigned
+ -->
+<html>
+<head>
+<title>Web Template test</title>
+</head>
+<body>
+
+Simple replacement
+..replacement..
+<br>
+++replacement++
+
+Dynamic block used:
+
+Dynamic block unused:
+
+Nested dynamic blocks:
+--replacement--
+<p>
+
+!- args ------------------------------------------------!
+
+arg1 = ARG1
+arg3 = ARG3
+
+!-------------------------------------------------------!
+
+#start of SUB
+aacc
+----
+cc
+aa
+.cc.
+
+#end of SUB
+
+#start of SUB3
+
+This is sub3.tpl
+
+
+#end of SUB3
+
+Value of AA: tmplate assigned
+Value of CC: &lt;br&gt;&amp;heloo CC &lt;br&gt;
+</html>
+#end of test1.tpl
+Content-type: text/plain
+
+Plain text addition (form test4.tpl)

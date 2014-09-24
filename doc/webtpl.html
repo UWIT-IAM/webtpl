@@ -1,0 +1,1949 @@
+<!-- ======================================================================
+ * Copyright (c) 2004-2014 The University of Washington
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ========================================================================
+ -->
+
+<html>
+<head>
+<title>WebTemplate library</title>
+<link rel=stylesheet type=text/css href=http://staff.washington.edu/fox/lib/fox.css>
+</head>
+<body>
+
+
+<p>
+<h1> WebTemplate library
+
+</h1>
+
+<div class=wide-right>
+
+<div class="proc-summary">
+<table cellpadding=3 border=0>
+<tr><th align=left valign=top>Summary:</th><td align=left> WebTemplate allows
+C programs to easily make web pages through the use
+of HTML templates.
+
+</td></tr>
+<tr><th align=left valign=top>Version:</th><td align=left> 1.15
+</td></tr>
+<tr><th align=left valign=top>Download:</th><td align=left>Current version: <a href="webtpl-1.15.tar.gz">webtpl-1.15</a>
+</td></tr>
+</table>
+</div>
+
+
+
+
+The template system facilitates the separation of HTML from c; 
+that is to say, the presentation of data from the generation
+of that data.  It accomplishes this through the use
+of macros and dynamic blocks in the template file.
+The term <i>parse</i> as used here really has more the meaning
+of <i>expand</i>.  The reason is historical.
+ 
+<p>
+
+<div class="proc-display">
+
+ A <b>macro</b> is identified by any sequence of the form
+ <b>{name}</b>,
+ where <i>name</i>
+ consists entirely of alphanumeric characters or underscores,
+ and is used to
+ identify the macro within the program.
+ A macro can acquire a value, a string,  by one of three ways:
+ <p>
+ <ul>
+ <li>Assignment at defintion:  <b>{name=<i>value</i>}</b>
+ <li>Assignment in the program. (<a href="#assign">WebTemplate_assign</a>)
+ <li>Parsing of a template. (<a href="#parse">WebTemplate_parse</a>, et.al.)
+ </ul>
+ <p>
+ In the latter case the value of the macro becomes text of the template,
+ with all internal macros and dynamic blocks expanded.
+
+</div>
+
+<div class="proc-display">
+
+A <b>dynamic block</b> is identified by a sequence
+  of the form,
+
+  <p class=indent>
+ <tt>
+ &lt;!-- BEGIN DYNAMIC BLOCK: <i>name</i> --&gt;<br>
+   <i>HTML code</i><br>
+ &lt;!-- END DYNAMIC BLOCK: <i>name</i> --&gt;<br>
+ </tt>
+
+ <p>
+ where <i>name</i>
+ consists entirely of alphanumeric characters or underscores,
+ and is used to
+ identify the block within the program.  
+ The 'BEGIN' and 'END' tags must be on lines by themselves. 
+ They cannot be mixed with other text on the same line.
+<p>
+Each time a dynamic block is parsed,
+the resulting text, including all 
+macros or nested dynamic blocks, are added to the value of the enclosing
+template.
+<p>
+WebTemplate allows an abbreviation of the block identifier. So
+the above pattern could look like this:
+
+<p>
+  <p class=indent>
+ <tt>
+ &lt;!-- BDB: <i>name</i> --&gt;<br>
+   <i>HTML code</i><br>
+ &lt;!-- EDB: <i>name</i> --&gt;<br>
+ </tt>
+<p>
+The BDB and EDB still have to be by themselves on the line, however.
+
+</div>
+
+<div class="proc-display">
+
+The library allows <b>comments</b> in template files.
+  Comments are identified by caller-defined markers in the
+  template text.
+
+  <p class=indent>
+ <tt>
+ <i>start_comment_marker</i> ...<br>
+   <i>Comments</i><br>
+ <i>end_comment_marerk</i> ...<br>
+ </tt>
+ <p>or
+  <p class=indent>
+ <tt>
+ <i>single_comment_line_marker</i> <i>Comments</i><br>
+ </tt>
+ 
+
+ <p>
+ where all of the markers must appear at the start of a line.
+ <p>
+ The API <a href="#setcmt">WebTemplate_set_comments</a>
+  activates comments.
+
+</div>
+
+<p>
+
+<hr align=left width=150>
+
+<p>
+The common procedure for the template system is something
+like this: 
+
+<p>
+<ol>
+<li>Load one or more templates that contain the HTML presentation
+    of your application.
+<p>
+<li>For single replacement values: define the macro values for each 
+    dynamic variable.
+<p>
+<li>For multiple replacement values, tables, lists, and etc.:
+  <ol>
+  <li>Define the macros used by the dynamic block, and
+  <li>parse the block into its parent.
+  </ol>
+<p>
+<li>For each template that forms part of a page:
+  Parse it into a macro definition for its parent.
+<p>
+<li>Parse the master template.
+<p>
+<li>Write the resultant macro value to the browser.
+</ol>
+<p>
+See the <a href="#demo">example</a>.
+
+
+
+
+
+<p>
+
+
+<div class="indent">
+<div class="menu">
+&nbsp; Contents 
+<ol>
+
+</ol>
+&nbsp;
+</div>
+</div>
+<p>
+
+
+
+
+<div class="proc-section-bar"><a name="WebTemplateAPI">  WebTemplate API</div><p>
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_get_error_string">&nbsp;WebTemplate_get_error_string</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Get the text message for an error
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>char*</tt>&nbsp;WebTemplate_get_error_string(<tt>WebTemplate</tt>&nbsp;<i>W</i>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> Text of the error.
+
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> Any call that results in an error stores a text message
+ in the template context.  This function retrieves the message.
+
+       <li> The message is cleared on any successful action.
+
+       <li> Do NOT free the message.
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_new">&nbsp;WebTemplate_new</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Initialize a template structure
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>WebTemplate</tt>&nbsp;WebTemplate_new()</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td></td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> This call must precede all others.  Although you might
+ make use of two template structures at once, I have never
+ had the need to do so.
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_free">&nbsp;WebTemplate_free</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Free a template structure
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>void</tt>&nbsp;WebTemplate_free(<tt>WebTemplate</tt>&nbsp;<i>W</i>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td></td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> frees the memory used by a WebTemplate
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_set_comments">&nbsp;WebTemplate_set_comments</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Set the comments delimiters
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>void</tt>&nbsp;WebTemplate_set_comments(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>start</var>,&nbsp;<tt>char*</tt> <var>end</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>start</var>:</td><td> string that signals start of a comment</td></tr>
+       <tr><td><var>end</var>:</td><td> string that signals end of a comment</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td></td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> If the <tt>end</tt> is NULL then
+         <tt>start</tt> identifies a single-line
+         comment.
+
+       <li> In the template the start and end strings must appear
+         at the beginning of a line.
+
+
+       <li> Comment delimiters must be setup before reading a template.
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_get_by_name">&nbsp;WebTemplate_get_by_name</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Read a template from a named file
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>int</tt>&nbsp;WebTemplate_get_by_name(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>name</var>,&nbsp;&nbsp;<tt>char*</tt> <var>filename</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>name</var>:</td><td> Name to be assigned to this template</td></tr>
+       <tr><td><var>filename</var>:</td><td> File containing the template</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> 0 if OK; else the unix errno or -1.
+
+
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> The template can be referenced by the string <i>name</i>
+
+       <li> Non-system errors are indicated by -1
+
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_get_by_fd">&nbsp;WebTemplate_get_by_fd</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Read a template from a file descriptor
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>int</tt>&nbsp;WebTemplate_get_by_fd(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>name</var>,&nbsp;&nbsp;<tt>int</tt> <var>fd</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>name</var>:</td><td> Name to be assigned to this template</td></tr>
+       <tr><td><var>fd</var>:</td><td> Open file descriptor from which to read the template</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> 0 if OK; else the unix errno or -1.
+
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> The template can be referenced by the string <i>name</i>
+
+       <li> Non-system errors are indicated by -1
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_get_by_fp">&nbsp;WebTemplate_get_by_fp</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Read a template from a file pointer
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>int</tt>&nbsp;WebTemplate_get_by_fp(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>name</var>,&nbsp;&nbsp;<tt>FILE*</tt>&nbsp;<i>fp</i>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>name</var>:</td><td> Name to be assigned to this template</td></tr>
+       <tr><td><var>fp</var>:</td><td> Open file from which to read the template</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> 0 if OK; else the unix errno or -1.
+
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> The template can be referenced by the string <i>name</i>
+
+       <li> Non-system errors are indicated by -1
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_assign">&nbsp;WebTemplate_assign</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Assign a value to a macro
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>void</tt>&nbsp;WebTemplate_assign(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>name</var>,&nbsp;<tt>char*</tt> <var>value</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>name</var>:</td><td> Name of the macro</td></tr>
+       <tr><td><var>value</var>:</td><td> Value of the macro</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td></td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> This is the direct way to give a macro a value.
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_assign_int">&nbsp;WebTemplate_assign_int</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Assign an intever value to a macro
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>void</tt>&nbsp;WebTemplate_assign_int(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>name</var>,&nbsp;<tt>int</tt> <var>value</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>name</var>:</td><td> Name of the macro</td></tr>
+       <tr><td><var>value</var>:</td><td> Integer value of the macro</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td></td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> The macro value will be the decimal representation of the integer.
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_parse_dynamic">&nbsp;WebTemplate_parse_dynamic</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Parse a dynamic block
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>int</tt>&nbsp;WebTemplate_parse_dynamic(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>block_name</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>block_name</var>:</td><td> Identifier of the block to be parsed</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> 0 if OK; 1 if template not found.
+
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> Evaluates all macros and nested blocks
+      and adds the resultant text to this block's parent template.
+
+
+       <li>    The block's identifier is a dotted concatenation of the template's
+         name, the names of any enclosing blocks, and this block's name.
+         For example, the identifier of a block named "item", within
+         a block named "list", in the template "page", would
+         be "<tt>page.list.item</tt>".
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_parse">&nbsp;WebTemplate_parse</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Parse a template
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>int</tt>&nbsp;WebTemplate_parse(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>macro_name</var>,&nbsp;<tt>char*</tt> <var>template_name</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>macro_name</var>:</td><td> Name of the macro to be assigned the template's value</td></tr>
+       <tr><td><var>template_name</var>:</td><td> Name of the template to be parsed</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> 0 if OK; 1 if template not found.
+
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li>  Evaluates all macros and nested blocks
+         and assigns the resultant text to the macro's value.
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_set_output">&nbsp;WebTemplate_set_output</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Set output file descriptor
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>void</tt>&nbsp;WebTemplate_set_output(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>int</tt> <var>fd</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>fd</var>:</td><td> file descriptor to use for writing</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td></td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> All output will go to the designated file descriptor.
+         Default is to standard output.
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_add_header">&nbsp;WebTemplate_add_header</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Add a header name and value
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>void</tt>&nbsp;WebTemplate_add_header(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>name</var>,&nbsp;<tt>char*</tt> <var>value</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>name</var>:</td><td> Name of the header item</td></tr>
+       <tr><td><var>value</var>:</td><td> Value of the header</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td></td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> Adds the name/value pair to the header list
+
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_macro_value">&nbsp;WebTemplate_macro_value</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Retrieve a macro value
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>char*</tt>&nbsp;WebTemplate_macro_value(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>name</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>name</var>:</td><td> Name of the macro</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td>  A string containing the macros's value, NULL if not found
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> You are responsible for freeing the returned string
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_write">&nbsp;WebTemplate_write</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Output a macro value
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>int</tt>&nbsp;WebTemplate_write(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>name</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>name</var>:</td><td> Name of the macro to be written</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> 0 if OK; else the unix errno or -1.
+
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> Writes the macro's value to standard output or to
+         the file descriptor specified by a previous call
+         to <tt>WebTemplate_set_output</tt>.
+
+
+       <li> Unless you have previously called
+          <tt>WebTemplate_set_noheader</tt>,
+         an HTML header will automatically be written prior to
+         the first macro output.
+
+
+       <li> The macro is usually the final result of one or more
+         template evaluations and constitutes the complete web page.
+
+       <li> Returns -1 if macro not found
+
+
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_header">&nbsp;WebTemplate_header</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Output headers
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>int</tt>&nbsp;WebTemplate_header(<tt>WebTemplate</tt>&nbsp;<i>W</i>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> 0 if OK; else the unix errno.
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> This writes the html headers, plus any cookies.
+        Writing the headers explicitly allows you to
+        print diagnostics to the web page.
+
+       <li> If this procedure is not called, the headers
+        will be sent when the rest of the page is written.
+
+
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_set_noheader">&nbsp;WebTemplate_set_noheader</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Set <i>no header</i> option
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>void</tt>&nbsp;WebTemplate_set_noheader(<tt>WebTemplate</tt>&nbsp;<i>W</i>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td></td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> Normally WebTemplate will automatically write an HTML header
+         prior to writing anything else.  This call inhibits that behavior.
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_reset_output">&nbsp;WebTemplate_reset_output</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Reset output flags and values
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>int</tt>&nbsp;WebTemplate_reset_output(<tt>WebTemplate</tt>&nbsp;<i>W</i>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td></td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> This clears any output cookies and header flags.
+
+       <li> It allows persistant cgi programs to setup for
+        a new page.
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+<p>
+<div class="proc-section-bar">
+Form and cookie API
+</div>
+
+<p>
+The template package includes some convenience routines
+for managing cookies and parsing form data.
+<p>
+<div class="proc-display">
+
+Parameters, whether from a form or the QUERY_STRING, consist
+of name and value pairs.  Both the names and values are strings.
+A name may appear without a value.
+A name may appear more than once
+and thus acquire multiple values. No distinction is made
+between parameters acquired from forms or from QUERY_STRING arguments,
+except that the form values are processed first.
+</div>
+
+<p>
+<div class="proc-display">
+
+Cookies, received and sent with headers, are also name and
+value pairs.
+</div>
+<p>
+In addition, the template system stores the <b>REMOTE_USER</b>
+environment variable, set by the web server on authenticated
+requests, in the global variable <b>remote_user</b>.
+
+
+<p>
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_get_args">&nbsp;WebTemplate_get_args</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Load the form and request arguments (parameters)
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>void</tt>&nbsp;WebTemplate_get_args(<tt>WebTemplate</tt>&nbsp;<i>W</i>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td></td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> Processes arguments from:
+          <ol>
+           <li> form post data;
+           <li> QUERY_STRING parameters.
+          </ol>
+
+
+       <li> You normally call this just once at the start of
+        the cgi program.  Persistent cgi programs would
+        need to get new parameters for each request.
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_get_arg">&nbsp;WebTemplate_get_arg</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Get a parameter by name
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>char*</tt>&nbsp;WebTemplate_get_arg(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>name</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>name</var>:</td><td> Name of the parameter</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> A string containing the parameter's value.
+
+
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> Returns an empty string, if the
+         parameter was specified without a value.
+
+
+       <li> Returns NULL if the parameter was not specified
+
+       <li> If the parameter has multiple values, the first encountered
+         will be returned.
+
+       <li> You are responsible for freeing the returned string
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_get_arg_list">&nbsp;WebTemplate_get_arg_list</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Get a multivalued parameter by name
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>char**</tt>&nbsp;WebTemplate_get_arg_list(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>name</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>name</var>:</td><td> Name of the parameter</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> A null-terminated list of strings containing the parameter's values.
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> Returns NULL if the parameter was not specified
+
+       <li> Returns an empty string (or strings), if the parameter was
+         specified without a value.
+
+       <li> You are responsible for freeing the list and each string.
+
+       <li> You may use the provided function
+         <tt>WebTemplate_free_arg_list</tt> to do that.
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_free_arg_list">&nbsp;WebTemplate_free_arg_list</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Free a parameter list
+
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>void</tt>&nbsp;WebTemplate_free_arg_list(<tt>char**</tt>&nbsp;<i>list</i>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>list</var>:</td><td> List returned by <tt>WebTemplate_get_arg_list</tt></td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td></td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> This frees the list and all the strings
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_get_next_arg">&nbsp;WebTemplate_get_next_arg</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Get a parameter's name and value by number
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>char*</tt>&nbsp;WebTemplate_get_next_arg(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>int*</tt>&nbsp;<i>n</i>,&nbsp;<tt>char**</tt>&nbsp;<i>value</i>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>n</var>:</td><td> Pointer to a parameter index</td></tr>
+       <tr><td><var>value</var>:</td><td> Receives the parameter's value</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> A string containing the n'th parameter's name
+
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> Returns NULL if the index is out of range
+
+
+       <li> This function allows the caller to step through
+     all parameters.
+
+
+       <li> The index, <tt>n</tt>, must be initialized by the
+        caller. It will be incremented by one on each call.
+
+       <li> The first parameter is zero
+
+       <li> <tt>value</tt> will receive the n'th parameter's value,
+       or NULL if the parameter had no value.
+
+       <li> You are responsible for freeing the returned strings
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_get_octet_arg">&nbsp;WebTemplate_get_octet_arg</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Get a multi-part form value
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>int</tt>&nbsp;WebTemplate_get_octet_arg(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>name</var>,&nbsp;<tt>void**</tt>&nbsp;<i>value</i>,&nbsp;<tt>size_t*</tt>&nbsp;<i>len</i>,&nbsp;<tt>char**</tt>&nbsp;<i>type,&nbsp;<tt>char**</tt>&nbsp;V</i>filename')</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>name</var>:</td><td> Name of the parameter</td></tr>
+       <tr><td><var>value</var>:</td><td> Receives a pointer to the parameter's value</td></tr>
+       <tr><td><var>len</var>:</td><td> Receives the length of the value</td></tr>
+       <tr><td><var>type</var>:</td><td> Receives the <i>Content-type</i> of the parameter</td></tr>
+       <tr><td><var>filename</var>:</td><td> Receives the filename of the parameter</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> non-zero if the parameter exists; zero if not
+
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> This function is used to retrieve data from a multi-part form
+         submission.
+
+       <li> Expecting that thses data may be very large, the returned
+        value is a reference to internal data.  It is not copied.
+        You <b>must not</b> free the value.
+
+       <li> If the type and filename are not null they will recieve copies
+        the the form's type and filename fields.
+
+       <li> You are responsible for freeing the type and filename
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_html2text">&nbsp;WebTemplate_html2text</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Convert <em>html</em> to text
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>char*</tt>&nbsp;WebTemplate_html2text(<tt>char*</tt> <var>string</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>string</var>:</td><td> A html-encoded string</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> A string containing the decoded input
+
+
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> This function will convert standard html encoded strings
+       to plain text.
+
+
+       <li> You are responsible for freeing the returned string
+
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_text2html">&nbsp;WebTemplate_text2html</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Convert text to <em>html</em>
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>char*</tt>&nbsp;WebTemplate_text2html(<tt>char*</tt> <var>string</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>string</var>:</td><td> A string to convert</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> The encoded string
+
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> The encoded string will have these substitutions:
+      <p>
+      <table cellpadding=3 border=1 cellpadding=3>
+      <tr><td>in</td><td>out</td></tr>
+      <tt>
+      <tr><td>&quot;</td><td>&amp;quot;</td></tr>
+      <tr><td>&lt;</td><td>&amp;lt;</td></tr>
+      <tr><td>&gt;</td><td>&amp;gt;</td></tr>
+      <tr><td>&amp;</td><td>&amp;amp;</td></tr>
+      </tt>
+      </table>
+
+
+       <li> This function removes html commands from a string
+
+
+       <li> You are responsible for freeing the returned string
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_get_cookie">&nbsp;WebTemplate_get_cookie</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Get a cookie's value
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>char*</tt>&nbsp;WebTemplate_get_cookie(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>name</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>name</var>:</td><td> Name of the cookie</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td> A string containing the parameter's value.
+
+
+</td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> Returns NULL
+         if the cookie was not sent with the request.
+
+
+
+       <li> You are responsible for freeing the returned string
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+
+
+<p>
+<div class="proc">
+ <h2><a name="WebTemplate_set_cookie">&nbsp;WebTemplate_set_cookie</a></h2>
+ <table>
+  <tr><th valign=top align=right>Description:</th><td> Set a cookie's value 
+
+
+</td></tr>
+  <tr><th valign=top align=right>Syntax:</th><td>&nbsp;<tt>void</tt>&nbsp;WebTemplate_set_cookie(<tt>WebTemplate</tt>&nbsp;<i>W</i>,&nbsp;<tt>char*</tt> <var>name</var>,&nbsp;<tt>char*</tt> <var>value</var>,&nbsp;<tt>time_t</tt>&nbsp;V'expires,&nbsp;<tt>char*</tt> <var>domain</var>,&nbsp;<tt>char*</tt> <var>path</var>,&nbsp;<tt>int</tt> <var>secure</var>)</td></tr>
+  <tr><th valign=top align=right>Arguments:</th><td class="proc-args">
+     <table>
+       <tr><td><var>W</var>:</td><td> A WebTemplate </td></tr>
+       <tr><td><var>name</var>:</td><td> Name of the cookie</td></tr>
+       <tr><td><var>value</var>:</td><td> Value of the cookie</td></tr>
+       <tr><td><var>expires</var>:</td><td> Expiration time of the cookie, may be zero</td></tr>
+       <tr><td><var>path</var>:</td><td> Path attribute of the cookie, may be null</td></tr>
+       <tr><td><var>domain</var>:</td><td> Domain attribute of the cookie, may be null</td></tr>
+       <tr><td><var>secure</var>:</td><td> Non-zero to set the cookie's secure flag</td></tr>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Return:</th><td></td></tr>
+  <tr><th valign=top align=right>Errors:</th><td class="proc-args">
+     <table>
+
+
+     </table>
+     </td></tr>
+  <tr><th valign=top align=right>Notes:</th><td class="proc-notes">
+     <ol>
+       <li> Adds a cookie to the output page.  The cookies are written
+          when the header is written.
+
+
+
+
+
+
+
+     </ol>
+     </td></tr>
+  
+  </table>
+<p>
+
+
+</div>
+
+<p>
+
+
+
+
+<div class="proc-section-bar"><a name="Examples">
+</div><p>
+
+
+<p>
+<div class="proc">
+ <h2><a name="Factorials">&nbsp;Factorials</a></h2>
+  
+
+Assume two template files:
+<p>
+<b>page.tpl</b>
+<div class=bordered>
+<code><pre>
+ NOTE
+   Comments in this file are delimited by 'NOTE' and 'ENDNOTE'
+ ENDNOTE
+ &lt;html&gt;
+ &lt;head&gt;
+ &lt;title&gt;{TITLE}&lt;/title&gt;
+ &lt;/head&gt;
+ &lt;body&gt;
+ {BODY}
+ &lt;/body&gt;
+ &lt;/html&gt;
+ </pre></code>
+</div>
+<p>
+<p>
+<p><b>list.tpl</b>
+ <div class=bordered>
+ <code><pre>
+ # comments in this file are identified by leading '#'
+
+ &lt;h1&gt;{TITLE}&lt;/h1&gt;
+ &lt;p&gt;
+ &lt;table colsep=3&gt;
+ &lt;tr&gt;&lt;td align=right&gt;n&lt;/td&gt;&lt;td align=right&gt;n!&lt;/td&gt;&lt;/tr&gt;
+  &lt;!-- BEGIN DYNAMIC BLOCK: num --&gt;
+    &lt;tr&gt;&lt;td align=right&gt;{N}&lt;/td&gt;&lt;td align=right&gt;{NFACT}&lt;/td&gt;&lt;/tr&gt;
+  &lt;!-- END DYNAMIC BLOCK: num --&gt;
+ &lt;/table&gt;
+ </pre></code>
+ </div>
+
+<p>
+
+This program 
+
+ <div class=bordered>
+  <code><pre>
+/* Show factorials */
+
+
+main()
+{
+   WebTemplate W;
+   int n;
+   int f = 1;
+   char txt[12];
+
+   /* Initialize */
+   W = newWebTemplate();
+
+   /* Write the headers */
+   WebTemplate_header(W);
+
+   /* Load the two templates */
+   WebTemplate_set_comments(W, "NOTE", "ENDNOTE");
+   WebTemplate_get_by_name(W, "page", "page.tpl");
+   WebTemplate_set_comments(W, "#", NULL);
+   WebTemplate_get_by_name(W, "list", "list.tpl");
+
+   /* Set the title */
+   WebTemplate_assign(W, "TITLE", "10 factorials");
+
+   /* Make a line for each number */
+   for (n=1;n<11;n++) {
+     f = n * f;
+     sprintf(txt,"%d",n);
+     WebTemplate_assign(W, "N", txt);
+     sprintf(txt,"%d",f);
+     WebTemplate_assign(W, "NFACT", txt);
+     WebTemplate_parse_dynamic(W, "list.num");
+   }
+
+   /* Make the body of the page */
+   WebTemplate_parse(W, "BODY", "list");
+
+   /* Make the page */
+   WebTemplate_parse(W, "PAGE", "page");
+ 
+   /* Write the page */
+   WebTemplate_write(W, "PAGE");
+   
+   exit (0);
+}
+</pre></code>
+</div>
+
+<p>
+
+produces this page:
+
+ <div class=bordered>
+
+   <h1>10 factorials</h1>
+   <p>
+   <table colsep=3>
+   <tr><td align=right>n</td><td align=right>n!</td></tr>
+    <tr><td align=right>1</td><td align=right>1</td></tr>
+    <tr><td align=right>2</td><td align=right>2</td></tr>
+    <tr><td align=right>3</td><td align=right>6</td></tr>
+    <tr><td align=right>4</td><td align=right>24</td></tr>
+    <tr><td align=right>5</td><td align=right>120</td></tr>
+    <tr><td align=right>6</td><td align=right>720</td></tr>
+    <tr><td align=right>7</td><td align=right>5040</td></tr>
+    <tr><td align=right>8</td><td align=right>40320</td></tr>
+    <tr><td align=right>9</td><td align=right>362880</td></tr>
+    <tr><td align=right>10</td><td align=right>3628800</td></tr>
+   </table>
+
+ </div>
+ 
+<p>
+
+
+
+
+
+</div>
+
+
+
+
+
+
+<div class="floating-index">
+<h3>Procedures</h3>
+<ul id="toc">
+<li><a href="#WebTemplate_add_header">WebTemplate_add_header</a></li>
+<li><a href="#WebTemplate_assign">WebTemplate_assign</a></li>
+<li><a href="#WebTemplate_assign_int">WebTemplate_assign_int</a></li>
+<li><a href="#WebTemplate_free">WebTemplate_free</a></li>
+<li><a href="#WebTemplate_free_arg_list">WebTemplate_free_arg_list</a></li>
+<li><a href="#WebTemplate_get_arg">WebTemplate_get_arg</a></li>
+<li><a href="#WebTemplate_get_arg_list">WebTemplate_get_arg_list</a></li>
+<li><a href="#WebTemplate_get_args">WebTemplate_get_args</a></li>
+<li><a href="#WebTemplate_get_by_fd">WebTemplate_get_by_fd</a></li>
+<li><a href="#WebTemplate_get_by_fp">WebTemplate_get_by_fp</a></li>
+<li><a href="#WebTemplate_get_by_name">WebTemplate_get_by_name</a></li>
+<li><a href="#WebTemplate_get_cookie">WebTemplate_get_cookie</a></li>
+<li><a href="#WebTemplate_get_error_string">WebTemplate_get_error_string</a></li>
+<li><a href="#WebTemplate_get_next_arg">WebTemplate_get_next_arg</a></li>
+<li><a href="#WebTemplate_get_octet_arg">WebTemplate_get_octet_arg</a></li>
+<li><a href="#WebTemplate_header">WebTemplate_header</a></li>
+<li><a href="#WebTemplate_html2text">WebTemplate_html2text</a></li>
+<li><a href="#WebTemplate_macro_value">WebTemplate_macro_value</a></li>
+<li><a href="#WebTemplate_new">WebTemplate_new</a></li>
+<li><a href="#WebTemplate_parse">WebTemplate_parse</a></li>
+<li><a href="#WebTemplate_parse_dynamic">WebTemplate_parse_dynamic</a></li>
+<li><a href="#WebTemplate_reset_output">WebTemplate_reset_output</a></li>
+<li><a href="#WebTemplate_set_comments">WebTemplate_set_comments</a></li>
+<li><a href="#WebTemplate_set_cookie">WebTemplate_set_cookie</a></li>
+<li><a href="#WebTemplate_set_noheader">WebTemplate_set_noheader</a></li>
+<li><a href="#WebTemplate_set_output">WebTemplate_set_output</a></li>
+<li><a href="#WebTemplate_text2html">WebTemplate_text2html</a></li>
+<li><a href="#WebTemplate_write">WebTemplate_write</a></li>
+
+</ul>
+<p>
+<h3>Examples</h3>
+<ul id="toc">
+<li><a href="#Factorials">Factorials</a></li>
+
+</ul>
+
+</div>
+
+
+
+</body>
+</html>
+

@@ -1,0 +1,32 @@
+09/23/14	1.15
+	Fix a few memory leaks
+
+12/30/13	1.14
+	Fix bug in html2text
+
+10/10/13	1.13
+	No more stdout or stderr printing
+	WebTemplate_get_error_string added
+	
+08/06/26	1.11
+	Speed improvement to the dynamic parser.  Old way created
+	an item for each block parsed.  When there are, say, 100K
+	parsings, searches through the item list took way too long.
+	New way concatenates the text of multiple parsings into
+	a single item.
+
+08/02/26	1.9
+	Fixed bug in reload of first template
+	Change standard calls:
+		newWebTemplate -> WebTemplate_new
+		freeWebTemplate -> WebTemplate_free
+	(old names left as definitions)
+
+07/05/2007	1.8
+
+	Fixed WebTemplate_macro_value to return a copy of the string.
+
+02/05/2006	1.7
+
+	Various character conversions
+
