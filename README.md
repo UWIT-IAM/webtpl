@@ -3,21 +3,18 @@ webtpl
 
 Web template library for c
 
-# configure
+## configure
 
-'''
- $ ./boot
- $ ./configure
-'''
+ $> ./boot
 
-# make and install
+ $> ./configure
 
-'''
- $ make
- $ make install
-'''
+## make and install
 
-# API documentation
+ $> make
+ $> make install
+
+## API documentation
 
 See the webtpl.html file for API documentation.
 
