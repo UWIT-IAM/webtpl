@@ -5,14 +5,15 @@ Web template library for c
 
 ## configure
 
- $> ./boot
+ $ ./boot
 
- $> ./configure
+ $ ./configure
 
 ## make and install
 
- $> make
- $> make install
+ $ make
+
+ $ make install
 
 ## API documentation
 
