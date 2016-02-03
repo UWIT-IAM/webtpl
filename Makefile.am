@@ -4,6 +4,6 @@ libwebtpl_la_SOURCES = webtpl.c
 
 include_HEADERS=webtpl.h
 
-EXTRA_DIST= README CHANGES doc/webtpl.html test
+EXTRA_DIST= README.md CHANGES doc/webtpl.html test
 
 

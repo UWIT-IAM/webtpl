@@ -1070,7 +1070,7 @@ char *WebTemplate_get_arg(WebTemplate W, char *name)
    TmplMacro M;
    clear_error_string(W);
    M = find_macro(W->arg, name);
-   if (M) return (strdup(M->value));
+   if (M && M->value) return (strdup(M->value));
    return (NULL);
 }
 
@@ -1091,7 +1091,7 @@ char **WebTemplate_get_arg_list(WebTemplate W, char *name)
    /* build list */
    list = (char**) malloc((nv+1)*sizeof(char*));
    lp = list;
-   for (m=M;m;m=m->next) if (!strcmp(m->name, name)) {
+   for (m=M;m;m=m->next) if (m->value && !strcmp(m->name, name)) {
       *lp = strdup(m->value);
       lp++;
    }
@@ -1130,7 +1130,7 @@ char *WebTemplate_get_cookie(WebTemplate W, char *name)
    TmplMacro M;
    clear_error_string(W);
    M = find_macro(W->in_cookie, name);
-   if (M) return (strdup(M->value));
+   if (M && M->value) return (strdup(M->value));
    return (NULL);
 }
 
@@ -1260,7 +1260,7 @@ char *WebTemplate_macro_value(WebTemplate W, char *name)
    TmplMacro m;
    clear_error_string(W);
    m = find_macro(W->macros, name);
-   if (m) return (strdup(m->value));
+   if (m && m->value) return (strdup(m->value));
    else return (NULL);
 }
 
